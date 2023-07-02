@@ -2,9 +2,13 @@ package com.example.task_manager.service.impl;
 
 import com.example.task_manager.dto.TaskDto;
 import com.example.task_manager.models.TaskEntity;
+import com.example.task_manager.models.UserEntity;
 import com.example.task_manager.repository.TaskRepository;
+import com.example.task_manager.repository.UserRepository;
 import com.example.task_manager.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -14,15 +18,25 @@ import java.util.stream.Collectors;
 @Service
 public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
+    private UserRepository userRepository;
 
     @Autowired
-    public TaskServiceImpl(TaskRepository taskRepository) {
+    public TaskServiceImpl(TaskRepository taskRepository, UserRepository userRepository) {
         this.taskRepository = taskRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
     public List<TaskDto> getTasks() {
-        return taskRepository.findByUserId(1).stream().map(taskEntity -> mapToDto(taskEntity)).collect(Collectors.toList());
+        Object principle = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username;
+        if(principle instanceof UserDetails){
+            username = ((UserDetails) principle).getUsername();
+        }else {
+            username = principle.toString();
+        }
+        UserEntity user = userRepository.findByUsername(username).orElseThrow(()->new RuntimeException("Username not found"));
+        return taskRepository.findByUserId(user.getId()).stream().map(taskEntity -> mapToDto(taskEntity)).collect(Collectors.toList());
     }
 
     @Override
