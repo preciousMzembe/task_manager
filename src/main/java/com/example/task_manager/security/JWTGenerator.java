@@ -1,5 +1,6 @@
 package com.example.task_manager.security;
 
+import com.example.task_manager.exceptions.NotFoundException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -31,7 +32,6 @@ public class JWTGenerator {
     }
 
     private Key getSigningKey() {
-//        byte[] keyBytes = Decoders.BASE64.decode(this.secret);
         byte[] keyBytes = SecurityConstants.JWT_SECRET.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
@@ -39,7 +39,6 @@ public class JWTGenerator {
     public String getUsernameFromJWT(String token){
         Claims claims = Jwts.parser()
                 .setSigningKey(getSigningKey())
-//                .setSigningKey(SecurityConstants.JWT_SECRET)
                 .parseClaimsJws(token)
                 .getBody();
 
@@ -49,10 +48,9 @@ public class JWTGenerator {
     public boolean validateToken(String token){
         try {
             Jwts.parser().setSigningKey(getSigningKey()).parseClaimsJws(token);
-//            Jwts.parser().setSigningKey(SecurityConstants.JWT_SECRET).parseClaimsJws(token);
             return true;
         }catch (Exception ex){
-            throw new AuthenticationCredentialsNotFoundException("JWT expired or is incorrect");
+            throw new NotFoundException("JWT expired or is incorrect");
         }
     }
 }
